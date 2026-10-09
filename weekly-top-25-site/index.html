@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weekly Top 25</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: slim header (title, week, who's saving) over member tabs; each tab shows Top 25 or that member's watchlist as a grid of cards. Color = growth group. */
+:root{
+  --bg:#ECEEF3; --surface:#F8F9FC; --ink:#12151C; --muted:#586072; --line:#D3D8E2; --track:#E3E6EE;
+  --breakout:#CF2C56; --accelerating:#B86A00; --early:#0C8179; --scale:#4549C9;
+  --font-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1118; --surface:#171B25; --ink:#ECEFF6; --muted:#9BA4B7; --line:#2A3040; --track:#262C3B;
+  --breakout:#FF6F92; --accelerating:#F2A93B; --early:#3CC9BD; --scale:#9094FF; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1118; --surface:#171B25; --ink:#ECEFF6; --muted:#9BA4B7; --line:#2A3040; --track:#262C3B;
+  --breakout:#FF6F92; --accelerating:#F2A93B; --early:#3CC9BD; --scale:#9094FF; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+img{max-width:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.45;
+  padding-inline:max(16px,3vw);padding-block:24px 40px}
+button{font-family:inherit}
+.wrap{max-width:1280px;margin-inline:auto;display:flex;flex-direction:column;gap:20px}
+.mono{font-family:var(--font-data)}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 32px}
+.eyebrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font:400 12px var(--font-data);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{margin:4px 0 0;font-family:var(--font-display);font-stretch:75%;font-weight:800;font-size:clamp(36px,6vw,58px);line-height:.95;letter-spacing:-.01em}
+h1 span{color:var(--muted);font-weight:500}
+select{font:400 12px var(--font-data);letter-spacing:.04em;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;background:var(--surface)}
+.seg button{border:0;background:transparent;color:var(--ink);font:500 13px var(--font-body);padding:5px 13px;border-radius:999px;cursor:pointer}
+.seg button:hover{background:var(--track)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+nav.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+nav.tabs button{border:0;background:transparent;color:var(--muted);font:700 20px var(--font-display);font-stretch:85%;padding:10px 18px 12px;cursor:pointer;
+  border-bottom:3px solid transparent;margin-bottom:-1px}
+nav.tabs button:hover{color:var(--ink)}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+button:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px}
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:500 13px var(--font-body);color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;
+  padding:6px 13px;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.chip i{width:9px;height:9px;border-radius:50%;background:var(--c,var(--ink));display:inline-block}
+.chip em{font:400 12px var(--font-data);font-style:normal;color:var(--muted)}
+.chip:hover{border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip[aria-pressed="true"] em{color:inherit;opacity:.7}
+.summary{display:flex;flex-wrap:wrap;gap:8px 36px}
+.summary div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.summary b{font-family:var(--font-display);font-stretch:75%;font-weight:800;font-size:26px;line-height:1;font-variant-numeric:tabular-nums}
+.summary small{font:400 11px var(--font-data);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0;--c:var(--breakout)}
+.card[data-g="Accelerating"]{--c:var(--accelerating)}
+.card[data-g="Early signal"]{--c:var(--early)}
+.card[data-g="Scale"]{--c:var(--scale)}
+.top{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.id{display:flex;gap:12px;min-width:0}
+.rank{font:400 13px var(--font-data);color:var(--muted);padding-top:3px;min-width:2ch}
+.name{margin:0;font-family:var(--font-display);font-stretch:85%;font-weight:700;font-size:20px;line-height:1.15;overflow-wrap:anywhere}
+.name a{color:inherit;text-decoration:none}
+.name a:hover{text-decoration:underline;text-underline-offset:3px}
+.sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+.act{display:flex;gap:8px;align-items:center;flex:none}
+.pill{font:500 11px var(--font-data);letter-spacing:.05em;text-transform:uppercase;color:var(--c);border:1px solid currentColor;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.add{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
+.add svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.add:hover{border-color:var(--ink)}
+.add[aria-pressed="true"]{background:var(--c);border-color:var(--c);color:var(--bg)}
+.add .ck{display:none}
+.add[aria-pressed="true"] .ck{display:block}
+.add[aria-pressed="true"] .pl{display:none}
+.big{display:flex;flex-direction:column;gap:2px}
+.big b{font-family:var(--font-display);font-stretch:70%;font-weight:800;font-size:clamp(46px,9vw,58px);line-height:.95;color:var(--c);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.big span{font-size:13px;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;border-block:1px solid var(--line);padding-block:10px;margin:0}
+.stats div{min-width:0;display:flex;flex-direction:column;gap:2px}
+.stats dt{font:400 10.5px var(--font-data);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:0}
+.stats dd{margin:0;font:500 14px var(--font-data);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.wk{display:flex;flex-direction:column;gap:6px}
+.wk-head{display:flex;justify-content:space-between;align-items:baseline;font:400 10.5px var(--font-data);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.wk-head strong{font-weight:500;color:var(--ink);letter-spacing:0}
+.row{display:grid;grid-template-columns:62px 1fr auto;align-items:center;gap:10px;font:12px var(--font-data);color:var(--muted)}
+.row .t{height:10px;background:var(--track);border-radius:2px;overflow:hidden}
+.row .t i{display:block;height:100%;background:var(--c);border-radius:2px;min-width:2px}
+.row.last .t i{background:var(--muted);opacity:.55}
+.row .v{min-width:7ch;text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+.row.neg .t i{width:0!important;min-width:0}
+.why{margin:0;font-size:13px}
+.why b{font:500 10.5px var(--font-data);letter-spacing:.06em;text-transform:uppercase;color:var(--c);margin-right:6px}
+.stale{margin:-4px 0 0;font:400 11.5px var(--font-data);color:var(--muted)}
+.empty{grid-column:1/-1;color:var(--muted);padding:36px 0;max-width:52ch}
+.empty b{color:var(--ink)}
+.scrim{position:fixed;inset:0;background:rgba(10,12,18,.55);display:grid;place-items:center;padding:16px;z-index:10}
+.dlg{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:22px;width:min(100%,400px);display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.dlg h2{margin:0;font-family:var(--font-display);font-stretch:80%;font-weight:800;font-size:26px;line-height:1.05}
+.dlg p{margin:0;color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.dlg .who{display:flex;flex-direction:column;gap:8px}
+.dlg .who button{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font:600 16px var(--font-body);cursor:pointer}
+.dlg .who button:hover{border-color:var(--ink)}
+.dlg .who button small{font:400 11.5px var(--font-data);color:var(--muted);letter-spacing:.03em}
+.dlg .who button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.dlg .who button.on small{color:inherit;opacity:.75}
+.dlg .x{align-self:flex-start;background:none;border:0;color:var(--muted);font:500 13px var(--font-body);padding:4px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:8px;font-size:13px;max-width:calc(100vw - 32px);z-index:5}
+footer{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px 32px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+footer h2{margin:0 0 6px;font:500 11px var(--font-data);letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+footer p{margin:0 0 4px}
+footer b{color:var(--ink);font-weight:600}
+html{scroll-behavior:smooth}
+.home{display:flex;flex-direction:column;gap:36px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px}
+.tile{display:flex;flex-direction:column;gap:18px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;min-width:0}
+.tile{position:relative}
+.tile:hover{border-color:var(--ink)}
+.tile .nm{color:inherit;text-decoration:none}
+.tile .nm::after{content:"";position:absolute;inset:0}
+.tile .down{position:relative;z-index:1}
+.tile .nm{font-family:var(--font-display);font-stretch:70%;font-weight:800;font-size:clamp(44px,8vw,64px);line-height:.95;letter-spacing:-.01em}
+.tile .meta{display:flex;flex-direction:column;gap:2px;font:400 12.5px var(--font-data);color:var(--muted)}
+.tile .meta b{color:var(--ink);font-weight:500}
+.tile .go{margin-top:auto;font:500 13px var(--font-body);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.down{font:500 13px var(--font-body);color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:1px}
+.down:hover{border-color:var(--ink)}
+.wls-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 20px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.wls-head h2{margin:0;font-family:var(--font-display);font-stretch:75%;font-weight:800;font-size:clamp(26px,4vw,34px)}
+.wls-head p{margin:0;color:var(--muted);font-size:13px}
+.wls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:28px 24px;margin-top:18px}
+.wl{min-width:0;scroll-margin-top:16px}
+.wl h3{margin:0 0 4px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-family:var(--font-display);font-stretch:85%;font-weight:700;font-size:22px}
+.wl h3 em{font:400 12px var(--font-data);font-style:normal;color:var(--muted)}
+.wl ul{list-style:none;margin:0;padding:0}
+.wl li{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);--c:var(--breakout)}
+.wl li[data-g="Accelerating"]{--c:var(--accelerating)}
+.wl li[data-g="Early signal"]{--c:var(--early)}
+.wl li[data-g="Scale"]{--c:var(--scale)}
+.wl li i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.wl li a{color:inherit;text-decoration:none;font-weight:500;overflow-wrap:anywhere}
+.wl li a:hover{text-decoration:underline;text-underline-offset:3px}
+.wl li small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+.wl li span{font:500 13px var(--font-data);font-variant-numeric:tabular-nums;text-align:right}
+.wl .none{color:var(--muted);padding:12px 0;font-size:13px}
+.wl .more{display:inline-block;margin-top:10px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media (max-width:420px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}.card:hover{border-color:var(--c)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow"><span>Week ending</span><span id="weekSlot"></span></div>
+      <h1>Weekly Top 25<span id="who"> — Tempo</span></h1>
+    </div>
+  </header>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Members"></nav>
+  <div class="home" id="home" hidden></div>
+  <div class="bar" id="bar">
+    <div class="seg" id="view" role="group" aria-label="View"></div>
+    <div class="filters" id="filters" role="group" aria-label="Filter by group"></div>
+  </div>
+  <div class="summary" id="summary"></div>
+  <main class="grid" id="grid"><p class="empty">Loading this week's artists…</p></main>
+  <footer>
+    <div><h2>How the 25 are ranked</h2>
+      <p><b>35%</b> raw 7-day gain · <b>25%</b> 7-day % growth · <b>15%</b> share of the gain in the last 3 days · <b>15%</b> share of days up over 30 · <b>10%</b> Tempo momentum score.</p>
+      <p>Each input is converted to a 0–100 percentile across all eligible artists first, so one huge percentage cannot swamp the rest.</p></div>
+    <div><h2>Groups</h2>
+      <p><b>Breakout:</b> +100% or more in 7 days and at least 15,000 listeners gained.</p>
+      <p><b>Accelerating:</b> mid-size artists (30,000 to 100,000 listeners) not already in Breakout.</p>
+      <p><b>Scale:</b> 100,000+ listeners.</p>
+      <p><b>Early signal:</b> under 30,000 listeners.</p></div>
+    <div><h2>Selection</h2>
+      <p>Each Thursday's export is split into three lists of 25, dealt in ranked order within each group so every list carries the same group mix and a similar average score. Accounts that are not artist signals, such as religious recitations, are removed before ranking.</p></div>
+  </footer>
+</div>
+<div class="scrim" id="scrim" hidden><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitle" id="dlg"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="config.js"></script>
+<script>
+const MEMBERS = ["Rehan", "Claire", "Justice"];
+const GROUPS = [["Breakout","--breakout"],["Accelerating","--accelerating"],["Early signal","--early"],["Scale","--scale"]];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt = n => (n < 0 ? "−" : "") + Math.abs(n).toLocaleString("en-US");
+const store = {
+  get(k){ try { return localStorage.getItem("wt25-" + k); } catch (e) { return null; } },
+  set(k, v){ try { localStorage.setItem("wt25-" + k, v); } catch (e) {} }
+};
+const hashTab = () => { const h = location.hash.slice(1).toLowerCase(); return h === "home" ? "home" : MEMBERS.find(m => m.toLowerCase() === h); };
+const st = {
+  weeks: [], weekIdx: 0, loadError: false,
+  tab: hashTab() || "home",
+  view: "top",
+  filter: "All",
+  be: null, dbState: "pending", watch: new Map(), shown: []
+};
+const docId = (m, id) => m.toLowerCase() + "~" + id;
+
+/* ---------- data ---------- */
+const week = () => st.weeks[st.weekIdx];
+const latestIndex = () => {
+  const idx = new Map(); if (!st.weeks[0]) return idx;
+  for (const m of MEMBERS) for (const c of st.weeks[0].members[m] || []) idx.set(c.id, c);
+  return idx;
+};
+function watchItems(member){
+  const fresh = latestIndex();
+  return [...st.watch.values()].filter(d => d.member === member).sort((a, b) => b.savedAt - a.savedAt).map(d => {
+    const f = fresh.get(d.artistId);
+    return f ? {card: f, wk: st.weeks[0].id, wkLabel: st.weeks[0].label, stale: false}
+             : {card: d.card, wk: d.week, wkLabel: d.weekLabel, stale: true};
+  });
+}
+function currentList(){
+  if (st.view === "top") return (week()?.members[st.tab] || []).map(c => ({card: c, wk: week().id, wkLabel: week().label, stale: false}));
+  return watchItems(st.tab);
+}
+
+/* ---------- render ---------- */
+function delta(d){
+  if (d.prev <= 0) return "vs net loss or flat";
+  const r = d.gain / d.prev;
+  return r >= 2 ? r.toFixed(1) + "× last week" : (r >= 1 ? "+" : "") + Math.round((r - 1) * 100) + "% vs last week";
+}
+function cardHtml(it, i, maxBar){
+  const d = it.card, savers = MEMBERS.filter(m => st.watch.has(docId(m, d.id))), saved = savers.length > 0;
+  const wt = Math.max(0, d.gain) / maxBar * 100, lt = Math.max(0, d.prev) / maxBar * 100;
+  const left = st.view === "top" ? String(d.pos).padStart(2, "0") : esc(it.wkLabel.replace(/, \d{4}$/, ""));
+  const label = saved ? `${d.name} is on ${savers.join(", ")}'s watchlist. Change` : `Add ${d.name} to a watchlist`;
+  return `<article class="card" data-g="${esc(d.group)}">
+    <div class="top"><div class="id"><span class="rank">${left}</span>
+      <div><h2 class="name"><a href="https://open.spotify.com/artist/${esc(d.sp)}" target="_blank" rel="noopener">${esc(d.name)}</a></h2><div class="sub">${esc(d.genre)} · ${esc(d.country)}</div></div></div>
+      <div class="act"><span class="pill">${esc(d.group)}</span>
+        <button class="add" type="button" data-i="${i}" aria-pressed="${!!saved}" aria-label="${esc(label)}" title="${esc(label)}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path class="pl" d="M12 5v14M5 12h14"/><path class="ck" d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div></div>
+    <div class="big"><b>${esc(d.big)}</b><span>${esc(d.bigLabel)}</span></div>
+    <dl class="stats">
+      <div><dt>Listeners</dt><dd>${fmt(d.listeners)}</dd></div>
+      <div><dt>7-day gain</dt><dd>+${fmt(d.gain)}</dd></div>
+      <div><dt>7-day %</dt><dd>${esc(d.pct)}</dd></div>
+      <div><dt>Days up/30</dt><dd>${d.days}%</dd></div>
+    </dl>
+    <div class="wk"><div class="wk-head"><span>Weekly gain</span><strong>${delta(d)}</strong></div>
+      <div class="row"><span>This week</span><span class="t"><i style="width:${wt}%"></i></span><span class="v">${d.gain < 0 ? "" : "+"}${fmt(d.gain)}</span></div>
+      <div class="row last${d.prev < 0 ? " neg" : ""}"><span>Last week</span><span class="t"><i style="width:${lt}%"></i></span><span class="v">${d.prev < 0 ? "" : "+"}${fmt(d.prev)}</span></div></div>
+    <p class="why"><b>Why</b>${esc(d.why)}</p>
+    ${it.stale ? `<p class="stale">Saved from the week ending ${esc(it.wkLabel)}. Not in the latest lists.</p>` : ""}
+  </article>`;
+}
+const seg = (items, active, attr) => items.map(([v, label]) => `<button type="button" data-${attr}="${esc(v)}" aria-pressed="${v === active}">${label}</button>`).join("");
+function median(a){ const s = [...a].sort((x, y) => x - y), n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : 0; }
+function homeHtml(){
+  const w0 = st.weeks[0];
+  const tiles = MEMBERS.map(m => {
+    const c = w0 ? w0.members[m] || [] : [], n = [...st.watch.values()].filter(d => d.member === m).length;
+    return `<div class="tile"><a class="nm" href="#${m.toLowerCase()}" data-go="${m}">${m}</a>
+      <span class="meta"><span><b>25</b> artists this week</span><span><b>+${fmt(c.reduce((a, x) => a + x.gain, 0))}</b> combined 7-day gain</span></span>
+      <span class="go"><span>Open dashboard &rarr;</span><a class="down" href="#wl-${m.toLowerCase()}">${st.dbState === "ready" ? n + " saved" : "Watchlist"} &darr;</a></span></div>`;
+  }).join("");
+  const lists = MEMBERS.map(m => {
+    const items = st.dbState === "ready" ? watchItems(m) : [], max = 8;
+    const body = st.dbState === "off" ? `<p class="none">Watchlists could not load. Refresh to try again.</p>`
+      : st.dbState === "pending" ? `<p class="none">Loading…</p>`
+      : !items.length ? `<p class="none">Nothing saved yet.</p>`
+      : `<ul>${items.slice(0, max).map(it => `<li data-g="${esc(it.card.group)}"><i></i>
+          <div><a href="https://open.spotify.com/artist/${esc(it.card.sp)}" target="_blank" rel="noopener">${esc(it.card.name)}</a><small>${esc(it.card.group)} · ${fmt(it.card.listeners)} listeners${it.stale ? " · saved " + esc(it.wkLabel.replace(/, \d{4}$/, "")) : ""}</small></div>
+          <span>+${fmt(it.card.gain)}</span></li>`).join("")}</ul>`;
+    const more = items.length ? `<a class="down more" href="#${m.toLowerCase()}" data-go="${m}" data-view="watch">${items.length > max ? `See all ${items.length}` : "Open full watchlist"} &rarr;</a>` : "";
+    return `<section class="wl" id="wl-${m.toLowerCase()}"><h3>${m}<em>${st.dbState === "ready" ? items.length + " saved" : ""}</em></h3>${body}${more}</section>`;
+  }).join("");
+  return `<div class="tiles">${tiles}</div>
+    <div id="watchlists"><div class="wls-head"><h2>Watchlists</h2><p>Artists each member has saved. Tap the + on any card to add one.</p></div><div class="wls">${lists}</div></div>`;
+}
+function render(){
+  const home = st.tab === "home";
+  $("who").textContent = home ? " \u2014 Tempo" : "/ " + st.tab;
+  $("home").hidden = !home; $("bar").hidden = home; $("grid").hidden = home;
+  if (home) $("summary").hidden = true;
+  $("tabs").innerHTML = ["home", ...MEMBERS].map(m => `<button type="button" role="tab" id="tab-${m}" data-tab="${m}" aria-selected="${m === st.tab}">${m === "home" ? "Home" : m}</button>`).join("");
+  if (home) {
+    $("weekSlot").textContent = st.weeks[0] ? st.weeks[0].label : "\u2026";
+    $("home").innerHTML = homeHtml();
+    return;
+  }
+  const watchN = [...st.watch.values()].filter(d => d.member === st.tab).length;
+  $("view").innerHTML = seg([["top", "Top 25"], ["watch", `Watchlist ${st.dbState === "ready" ? watchN : ""}`.trim()]], st.view, "view");
+  const w = week();
+  $("weekSlot").innerHTML = st.weeks.length > 1 && st.view === "top"
+    ? `<select id="weekSel" aria-label="Week">${st.weeks.map((x, i) => `<option value="${i}"${i === st.weekIdx ? " selected" : ""}>${esc(x.label)}</option>`).join("")}</select>`
+    : esc(st.view === "watch" && st.weeks[0] ? st.weeks[0].label : w ? w.label : "…");
+  const list = currentList();
+  $("filters").innerHTML = `<button class="chip" type="button" data-f="All" aria-pressed="${st.filter === "All"}">All<em>${list.length}</em></button>` +
+    GROUPS.map(([g, v]) => `<button class="chip" type="button" data-f="${g}" aria-pressed="${st.filter === g}" style="--c:var(${v})"><i></i>${g}<em>${list.filter(x => x.card.group === g).length}</em></button>`).join("");
+  const shown = st.filter === "All" ? list : list.filter(x => x.card.group === st.filter);
+  st.shown = shown;
+  const top = st.view === "top";
+  $("summary").hidden = !(top && w);
+  if (top && w) {
+    const c = w.members[st.tab] || [];
+    $("summary").innerHTML = `<div><b>+${fmt(c.reduce((a, x) => a + x.gain, 0))}</b><small>Combined 7-day listener gain</small></div>
+      <div><b>+${Math.round(median(c.map(x => x.pctNum)))}%</b><small>Median 7-day growth</small></div>
+      <div><b>${Math.round(median(c.map(x => x.days)))}%</b><small>Median days up, last 30</small></div>`;
+  }
+  const maxBar = Math.max(1, ...shown.flatMap(x => [x.card.gain, x.card.prev]));
+  let html;
+  if (st.loadError) html = `<p class="empty"><b>The weekly data didn't load.</b> Refresh the page. If it keeps happening, the latest update may not have been published yet.</p>`;
+  else if (!w) html = `<p class="empty">Loading this week's artists…</p>`;
+  else if (!shown.length && !top) {
+    html = st.dbState === "off" ? `<p class="empty"><b>Watchlists could not load.</b> Check your connection and refresh the page.</p>`
+      : st.dbState === "pending" ? `<p class="empty">Loading ${esc(st.tab)}'s watchlist…</p>`
+      : list.length ? `<p class="empty">No ${esc(st.filter)} artists on ${esc(st.tab)}'s watchlist.</p>`
+      : `<p class="empty"><b>${esc(st.tab)}'s watchlist is empty.</b> Tap the + on any artist in a Top 25 and choose who you are saving as.</p>`;
+  } else if (!shown.length) html = `<p class="empty">No ${esc(st.filter)} artists in this list.</p>`;
+  else html = shown.map((x, i) => cardHtml(x, i, maxBar)).join("");
+  $("grid").innerHTML = html;
+}
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg){ const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 3200); }
+
+/* ---------- actions ---------- */
+let dlgItem = null, dlgOpener = null;
+function openDlg(i, opener){
+  const it = st.shown[i]; if (!it) return;
+  if (!st.be) { toast("Watchlists are not available right now. Refresh and try again."); return; }
+  dlgItem = it; dlgOpener = opener; drawDlg();
+  $("scrim").hidden = false; $("dlg").querySelector(".who button").focus();
+}
+function drawDlg(){
+  const d = dlgItem.card;
+  $("dlg").innerHTML = `<h2 id="dlgTitle">Who are you saving as?</h2>
+    <p>${esc(d.name)} goes on the watchlist you pick. Tap a name that already has a check to remove it.</p>
+    <div class="who">${MEMBERS.map(m => { const on = st.watch.has(docId(m, d.id));
+      return `<button type="button" data-pick="${m}" class="${on ? "on" : ""}">${m}<small>${on ? "Saved \u2713 tap to remove" : "Save"}</small></button>`; }).join("")}</div>
+    <button class="x" type="button" data-close="1">Cancel</button>`;
+}
+function closeDlg(){ $("scrim").hidden = true; dlgItem = null; if (dlgOpener && dlgOpener.isConnected) dlgOpener.focus(); }
+async function pick(m){
+  const it = dlgItem; if (!it) return;
+  const id = docId(m, it.card.id);
+  try {
+    if (st.watch.has(id)) { await st.be.remove(id); st.watch.delete(id); render(); toast(`Removed ${it.card.name} from ${m}'s watchlist.`); }
+    else { const doc = {member: m, artistId: it.card.id, savedAt: Date.now(), week: it.wk, weekLabel: it.wkLabel, card: it.card}; await st.be.save(id, doc); st.watch.set(id, doc); render(); toast(`Saved ${it.card.name} to ${m}'s watchlist.`); }
+    closeDlg();
+  } catch (e) { toast("Couldn't save. Check your connection and try again."); }
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("scrim").hidden) closeDlg(); });
+$("scrim").addEventListener("click", e => { if (e.target === $("scrim")) closeDlg(); });
+document.addEventListener("click", e => {
+  const b = e.target.closest("button, a"); if (!b) return;
+  if (b.dataset.go) { e.preventDefault(); st.tab = b.dataset.go; st.view = b.dataset.view || "top"; st.filter = "All"; try { history.replaceState(null, "", "#" + st.tab.toLowerCase()); } catch (x) {} render(); window.scrollTo(0, 0); }
+  else if (b.dataset.tab) { st.tab = b.dataset.tab; st.view = "top"; try { history.replaceState(null, "", "#" + st.tab.toLowerCase()); } catch (x) {} st.filter = "All"; render(); window.scrollTo(0, 0); }
+  else if (b.dataset.view) { st.view = b.dataset.view; st.filter = "All"; render(); }
+  else if (b.dataset.f) { st.filter = b.dataset.f; render(); }
+  else if (b.classList.contains("add")) openDlg(+b.dataset.i, b);
+  else if (b.dataset.pick) pick(b.dataset.pick);
+  else if (b.dataset.close) closeDlg();
+});
+document.addEventListener("change", e => { if (e.target.id === "weekSel") { st.weekIdx = +e.target.value; render(); } });
+window.addEventListener("hashchange", () => { const t = hashTab(); if (t && t !== st.tab) { st.tab = t; render(); } });
+
+/* ---------- boot ---------- */
+render();
+fetch("data.json").then(r => { if (!r.ok) throw 0; return r.json(); })
+  .then(j => { st.weeks = j.weeks || []; if (!st.weeks.length) throw 0; render(); })
+  .catch(() => { st.loadError = true; render(); });
+/* ---------- watchlist storage ----------
+   Shared: a Supabase table (see config.js and setup.sql). If config.js is empty, watchlists fall back to this browser only. */
+const CFG = window.WT_CONFIG || {};
+const shared = !!(CFG.supabaseUrl && CFG.supabaseKey);
+const sb = (path, opt = {}) => fetch(CFG.supabaseUrl.replace(/\/$/, "") + "/rest/v1/watchlist" + path, {
+  ...opt, headers: {apikey: CFG.supabaseKey, Authorization: "Bearer " + CFG.supabaseKey, "Content-Type": "application/json", ...(opt.headers || {})}
+}).then(r => { if (!r.ok) throw new Error(r.status); return r.status === 204 ? null : r.text().then(t => t ? JSON.parse(t) : null); });
+const fromRow = r => [r.id, {member: r.member, artistId: r.artist_id, savedAt: r.saved_at, week: r.week, weekLabel: r.week_label, card: r.card}];
+const backends = {
+  shared: {
+    list: () => sb("?select=*").then(rows => new Map(rows.map(fromRow))),
+    save: (id, d) => sb("", {method: "POST", headers: {Prefer: "resolution=merge-duplicates,return=minimal"},
+      body: JSON.stringify({id, member: d.member, artist_id: d.artistId, saved_at: d.savedAt, week: d.week, week_label: d.weekLabel, card: d.card})}),
+    remove: id => sb("?id=eq." + encodeURIComponent(id), {method: "DELETE"})
+  },
+  local: {
+    read(){ try { return JSON.parse(localStorage.getItem("wt25-watch") || "{}"); } catch (e) { return {}; } },
+    write(o){ try { localStorage.setItem("wt25-watch", JSON.stringify(o)); } catch (e) {} },
+    list(){ return Promise.resolve(new Map(Object.entries(this.read()))); },
+    save(id, d){ const o = this.read(); o[id] = d; this.write(o); return Promise.resolve(); },
+    remove(id){ const o = this.read(); delete o[id]; this.write(o); return Promise.resolve(); }
+  }
+};
+st.be = shared ? backends.shared : backends.local;
+async function refreshWatch(){
+  try { st.watch = await st.be.list(); st.dbState = "ready"; }
+  catch (e) { if (st.dbState !== "ready") st.dbState = "off"; }
+  if ($("scrim").hidden) render(); else drawDlg();
+}
+refreshWatch();
+if (shared) {
+  setInterval(() => { if (!document.hidden) refreshWatch(); }, 20000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshWatch(); });
+}
+</script>
+</body>
+</html>
